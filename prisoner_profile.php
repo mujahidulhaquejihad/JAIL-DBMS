@@ -1,0 +1,253 @@
+<?php
+session_start();
+include 'db.php';
+
+// Security: Only Admin
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'admin') { 
+    header("Location: index.php"); 
+    exit(); 
+}
+
+$pid = $_GET['id'];
+$curr_user_id = $_SESSION['user_id'];
+
+// Get Current Admin ID & Name
+$admin_res = $conn->query("SELECT admin_id, admin_name FROM admin WHERE user_id='$curr_user_id'");
+$admin_row = $admin_res->fetch_assoc();
+$curr_admin_id = $admin_row['admin_id'];
+
+// --- APPROVE LOGIC ---
+if (isset($_POST['approve_work'])) {
+    $assign_id = $_POST['assign_id'];
+    $hours = $_POST['hours']; 
+
+    $conn->begin_transaction();
+    try {
+        $conn->query("UPDATE duty_assignment SET status='Approved', hours_completed='$hours', admin_id='$curr_admin_id' WHERE assignment_id='$assign_id'");
+        $reason = "Completed Duty Assignment ID: $assign_id";
+        $conn->query("INSERT INTO behavior_record (prisoner_id, admin_id, points_change, reason) VALUES ('$pid', '$curr_admin_id', '$hours', '$reason')");
+        $conn->query("UPDATE prisoner SET total_points = total_points + $hours WHERE prisoner_id='$pid'");
+        $conn->commit();
+        echo "<script>alert('Duty Approved & Points Awarded');</script>";
+    } catch (Exception $e) {
+        $conn->rollback();
+    }
+}
+
+// --- FETCH DATA ---
+$p_data = $conn->query("SELECT * FROM prisoner WHERE prisoner_id='$pid'")->fetch_assoc();
+$crimes = $conn->query("SELECT * FROM crime WHERE prisoner_id='$pid'");
+$sentences = $conn->query("SELECT * FROM sentence WHERE prisoner_id='$pid'");
+$duties = $conn->query("SELECT da.*, d.duty_name FROM duty_assignment da JOIN duty d ON da.duty_id = d.duty_id WHERE da.prisoner_id='$pid' ORDER BY da.assignment_id DESC");
+$behavior_log = $conn->query("SELECT b.*, a.admin_name FROM behavior_record b LEFT JOIN admin a ON b.admin_id = a.admin_id WHERE b.prisoner_id='$pid' ORDER BY b.record_date DESC");
+$eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LEFT JOIN admin a ON pe.admin_id = a.admin_id WHERE pe.prisoner_id='$pid' ORDER BY pe.evaluation_date DESC");
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile: <?php echo $p_data['name']; ?></title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; padding: 20px; margin: 0; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        /* Navigation */
+        .top-nav { margin-bottom: 20px; }
+        .btn-back { text-decoration: none; color: #555; font-weight: bold; }
+        .btn-back:hover { color: #007BFF; }
+
+        /* Card System */
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 20px; }
+        .card-header { background: #343a40; color: white; padding: 15px 20px; font-size: 18px; font-weight: 600; }
+        .card-body { padding: 20px; }
+
+        /* Stats Grid */
+        .stats-row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .stat-box { flex: 1; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e9ecef; text-align: center; }
+        .stat-label { display: block; color: #6c757d; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .stat-value { font-size: 20px; font-weight: bold; color: #333; }
+        .status-Paroled { color: #28a745; }
+        .status-Isolated { color: #dc3545; }
+        .status-Normal { color: #007bff; }
+
+        /* Information Grids */
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        
+        /* Personal Info Table Style */
+        .info-table { width: 100%; border-collapse: collapse; }
+        .info-table td { padding: 8px 5px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .info-label { font-weight: bold; color: #555; width: 140px; }
+        .section-subhead { color: #007bff; font-weight: bold; margin-top: 15px; margin-bottom: 5px; display: block; border-bottom: 1px solid #ddd; padding-bottom: 3px;}
+
+        /* Tables & Lists */
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #555; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        
+        .meta-text { color: #888; font-size: 12px; display: block; }
+        .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; }
+        .bg-green { background: #28a745; }
+        .bg-orange { background: #ffc107; color: #333; }
+        
+        .btn-approve { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="top-nav">
+        <a href="admin_dashboard.php" class="btn-back">&laquo; Back to Dashboard</a>
+    </div>
+
+    <!-- 1. HEADER & KEY STATS -->
+    <div class="card">
+        <div class="card-header">
+            <?php echo $p_data['name']; ?> 
+            <span style="float:right; font-size:14px; background:#555; padding:2px 8px; border-radius:4px;">ID: <?php echo $p_data['prisoner_id']; ?></span>
+        </div>
+        <div class="card-body">
+            <div class="stats-row">
+                <div class="stat-box">
+                    <span class="stat-label">Current Status</span>
+                    <span class="stat-value status-<?php echo $p_data['current_status']; ?>"><?php echo $p_data['current_status']; ?></span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Total Points</span>
+                    <span class="stat-value"><?php echo $p_data['total_points']; ?></span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Cell Block</span>
+                    <span class="stat-value"><?php echo $p_data['cell_no']; ?></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. PERSONAL & FAMILY INFORMATION (NEW) -->
+    <div class="card">
+        <div class="card-header">Personal & Family Information</div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                <!-- Column 1 -->
+                <div>
+                    <span class="section-subhead">Identity</span>
+                    <table class="info-table">
+                        <tr><td class="info-label">Date of Birth:</td><td><?php echo $p_data['dob']; ?></td></tr>
+                        <tr><td class="info-label">Gender:</td><td><?php echo $p_data['gender']; ?></td></tr>
+                        <tr><td class="info-label">Height:</td><td><?php echo $p_data['height_cm']; ?> cm</td></tr>
+                        <tr><td class="info-label">Weight:</td><td><?php echo $p_data['weight_kg']; ?> kg</td></tr>
+                        <tr><td class="info-label">Blood Group:</td><td><?php echo $p_data['blood_group']; ?></td></tr>
+                        <tr><td class="info-label">Eye Color:</td><td><?php echo $p_data['eye_color']; ?></td></tr>
+                        <tr><td class="info-label">Hair Color:</td><td><?php echo $p_data['hair_color']; ?></td></tr>
+                    </table>
+                </div>
+                <!-- Column 2 -->
+                <div>
+                    <span class="section-subhead">Family & Contact</span>
+                    <table class="info-table">
+                        <tr><td class="info-label">Father's Name:</td><td><?php echo $p_data['father_name']; ?></td></tr>
+                        <tr><td class="info-label">Mother's Name:</td><td><?php echo $p_data['mother_name']; ?></td></tr>
+                        <tr><td class="info-label">Emergency Contact:</td><td><?php echo $p_data['emergency_contact_name']; ?></td></tr>
+                        <tr><td class="info-label">Emergency Phone:</td><td><?php echo $p_data['emergency_contact_no']; ?></td></tr>
+                        <tr><td class="info-label">Present Address:</td><td><?php echo $p_data['present_address']; ?></td></tr>
+                        <tr><td class="info-label">Permanent Addr:</td><td><?php echo $p_data['permanent_address']; ?></td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. LEGAL DETAILS (Crimes & Sentences) -->
+    <div class="details-grid">
+        <div class="card">
+            <div class="card-header">Crimes Committed</div>
+            <div class="card-body">
+                <ul>
+                <?php while($c = $crimes->fetch_assoc()): ?>
+                    <li>
+                        <strong><?php echo $c['crime_type']; ?></strong>
+                        <span class="meta-text">Severity: <?php echo $c['severity_level']; ?> | Loc: <?php echo $c['location']; ?></span>
+                    </li>
+                <?php endwhile; ?>
+                </ul>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Current Sentence</div>
+            <div class="card-body">
+                <ul>
+                <?php while($s = $sentences->fetch_assoc()): ?>
+                    <li>
+                        <strong><?php echo $s['duration_in_months']; ?> Months Imprisonment</strong>
+                        <span class="meta-text">Start: <?php echo $s['start_date']; ?> | Type: <?php echo $s['sentence_type']; ?></span>
+                    </li>
+                <?php endwhile; ?>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. DUTY & HISTORY -->
+    <div class="card">
+        <div class="card-header">Duty Assignments</div>
+        <div class="card-body">
+            <table>
+                <tr><th>Duty</th><th>Hours</th><th>Status</th><th>Action</th></tr>
+                <?php while($d = $duties->fetch_assoc()): ?>
+                <tr>
+                    <td><?php echo $d['duty_name']; ?></td>
+                    <td><?php echo $d['hours_assigned']; ?></td>
+                    <td><span class="badge <?php echo ($d['status']=='Pending')?'bg-orange':'bg-green'; ?>"><?php echo $d['status']; ?></span></td>
+                    <td>
+                        <?php if($d['status'] == 'Pending'): ?>
+                            <form method="post" style="margin:0;">
+                                <input type="hidden" name="assign_id" value="<?php echo $d['assignment_id']; ?>">
+                                <input type="hidden" name="hours" value="<?php echo $d['hours_assigned']; ?>">
+                                <button type="submit" name="approve_work" class="btn-approve">✔ Approve</button>
+                            </form>
+                        <?php else: echo "<span style='color:#ccc;'>Locked</span>"; endif; ?>
+                    </td>
+                </tr>
+                <?php endwhile; ?>
+            </table>
+        </div>
+    </div>
+
+    <div class="details-grid">
+        <div class="card">
+            <div class="card-header">Behavior History</div>
+            <div class="card-body">
+                <table>
+                    <tr><th>Reason</th><th>Pts</th><th>Admin</th></tr>
+                    <?php while($b = $behavior_log->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo $b['reason']; ?></td>
+                            <td style="color:<?php echo ($b['points_change']>0)?'green':'red'; ?>"><b><?php echo $b['points_change']; ?></b></td>
+                            <td style="font-size:12px;"><?php echo $b['admin_name']; ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Parole Evaluations</div>
+            <div class="card-body">
+                <table>
+                    <tr><th>Decision</th><th>Date</th><th>Admin</th></tr>
+                    <?php while($e = $eval_log->fetch_assoc()): ?>
+                        <tr>
+                            <td><b><?php echo $e['decision']; ?></b></td>
+                            <td><?php echo date("M d", strtotime($e['evaluation_date'])); ?></td>
+                            <td style="font-size:12px;"><?php echo $e['admin_name']; ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
