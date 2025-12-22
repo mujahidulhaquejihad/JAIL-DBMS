@@ -19,9 +19,9 @@ function generatePrisonerID() {
 }
 
 if (isset($_POST['add_prisoner'])) {
-    // 1. Account Info
-    $u_name = $_POST['username'];
-    $u_pass = $_POST['password'];
+    // 1. Account Info - TRIMMED to prevent login issues
+    $u_name = trim($_POST['username']);
+    $u_pass = trim($_POST['password']);
     
     // 2. Personal Basic
     $name = $_POST['fullname'];
@@ -54,6 +54,7 @@ if (isset($_POST['add_prisoner'])) {
     $s_start = $_POST['start_date'];
     $s_eligibility = $_POST['eligibility']; 
 
+    // Check if username exists
     $check = $conn->query("SELECT * FROM user_account WHERE username='$u_name'");
     if ($check->num_rows > 0) {
         echo "<script>alert('Error: Username already exists!');</script>";
@@ -64,7 +65,9 @@ if (isset($_POST['add_prisoner'])) {
             $new_pid = generatePrisonerID();
 
             // B. Create User Account
-            $conn->query("INSERT INTO user_account (username, password, role) VALUES ('$u_name', '$u_pass', 'prisoner')");
+            $stmt_user = $conn->prepare("INSERT INTO user_account (username, password, role) VALUES (?, ?, 'prisoner')");
+            $stmt_user->bind_param("ss", $u_name, $u_pass);
+            $stmt_user->execute();
             $uid = $conn->insert_id;
 
             // C. Create Prisoner Entity
@@ -75,9 +78,9 @@ if (isset($_POST['add_prisoner'])) {
                 emergency_contact_name, emergency_contact_no
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             
-            // FIX IS HERE: "sissssssssiisssss" (17 chars matching 17 vars)
-            // Height/Weight are 'i', Blood Group is 's'
-            $stmt->bind_param("sissssssssiisssss", 
+            // Type string: s (id) + i (uid) + s (name) + s (dob) + s (cell) + s(father) + s(mother) + s(pres) + s(perm) + s(gen) + i(ht) + i(wt) + s(bld) + s(eye) + s(hair) + s(em_nm) + s(em_no)
+            // Total: 17 chars. Order must match values.
+            $stmt->bind_param("sissssssssiiissss", 
                 $new_pid, $uid, $name, $dob, $cell, 
                 $father, $mother, $present, $permanent,
                 $gender, $height, $weight, $blood, $eye, $hair, 
@@ -92,7 +95,7 @@ if (isset($_POST['add_prisoner'])) {
             $conn->query("INSERT INTO sentence (prisoner_id, duration_in_months, start_date, parole_eligibility) VALUES ('$new_pid', '$s_duration', '$s_start', '$s_eligibility')");
 
             $conn->commit();
-            echo "<script>alert('Success! Generated ID: $new_pid'); window.location.href='admin_dashboard.php';</script>";
+            echo "<script>alert('Success! Generated ID: $new_pid. You can now login with username: $u_name'); window.location.href='admin_dashboard.php';</script>";
         } catch (Exception $e) {
             $conn->rollback();
             echo "<script>alert('Error: " . $e->getMessage() . "');</script>";
