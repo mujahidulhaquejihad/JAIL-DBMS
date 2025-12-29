@@ -16,7 +16,30 @@ $admin_res = $conn->query("SELECT admin_id, admin_name FROM admin WHERE user_id=
 $admin_row = $admin_res->fetch_assoc();
 $curr_admin_id = $admin_row['admin_id'];
 
-// --- APPROVE LOGIC ---
+// --- DELETE LOGIC ---
+if (isset($_POST['delete_prisoner'])) {
+    // 1. Get the User ID associated with this prisoner
+    $u_query = $conn->query("SELECT user_id FROM prisoner WHERE prisoner_id='$pid'");
+    $u_data = $u_query->fetch_assoc();
+    $target_uid = $u_data['user_id'];
+
+    if ($target_uid) {
+        // 2. Delete the User Account (Cascade will delete prisoner data)
+        if ($conn->query("DELETE FROM user_account WHERE user_id='$target_uid'")) {
+            echo "<script>alert('Prisoner and User Account deleted successfully.'); window.location.href='admin_dashboard.php';</script>";
+            exit();
+        } else {
+            echo "<script>alert('Error deleting user: " . $conn->error . "');</script>";
+        }
+    } else {
+        // Fallback: Just delete prisoner record if no user link
+        $conn->query("DELETE FROM prisoner WHERE prisoner_id='$pid'");
+        echo "<script>alert('Prisoner record deleted (No linked user found).'); window.location.href='admin_dashboard.php';</script>";
+        exit();
+    }
+}
+
+// --- APPROVE LOGIC (Fixed with Redirect) ---
 if (isset($_POST['approve_work'])) {
     $assign_id = $_POST['assign_id'];
     $hours = $_POST['hours']; 
@@ -28,14 +51,23 @@ if (isset($_POST['approve_work'])) {
         $conn->query("INSERT INTO behavior_record (prisoner_id, admin_id, points_change, reason) VALUES ('$pid', '$curr_admin_id', '$hours', '$reason')");
         $conn->query("UPDATE prisoner SET total_points = total_points + $hours WHERE prisoner_id='$pid'");
         $conn->commit();
-        echo "<script>alert('Duty Approved & Points Awarded');</script>";
+        
+        // STORE MESSAGE & REDIRECT
+        $_SESSION['flash_msg'] = "Duty Approved & Points Awarded successfully.";
     } catch (Exception $e) {
         $conn->rollback();
+        $_SESSION['flash_msg'] = "Error updating record.";
     }
+    
+    // REDIRECT TO SELF (Clears POST data)
+    header("Location: prisoner_profile.php?id=$pid");
+    exit();
 }
 
 // --- FETCH DATA ---
 $p_data = $conn->query("SELECT * FROM prisoner WHERE prisoner_id='$pid'")->fetch_assoc();
+if (!$p_data) { die("Prisoner not found."); } // Safety check
+
 $crimes = $conn->query("SELECT * FROM crime WHERE prisoner_id='$pid'");
 $sentences = $conn->query("SELECT * FROM sentence WHERE prisoner_id='$pid'");
 $duties = $conn->query("SELECT da.*, d.duty_name FROM duty_assignment da JOIN duty d ON da.duty_id = d.duty_id WHERE da.prisoner_id='$pid' ORDER BY da.assignment_id DESC");
@@ -50,18 +82,19 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; padding: 20px; margin: 0; }
         .container { max-width: 1100px; margin: 0 auto; }
-        
-        /* Navigation */
-        .top-nav { margin-bottom: 20px; }
+        .top-nav { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         .btn-back { text-decoration: none; color: #555; font-weight: bold; }
-        .btn-back:hover { color: #007BFF; }
+        
+        /* Action Buttons */
+        .action-group { display: flex; gap: 10px; }
+        .btn-edit { background: #ff07f7ff; color: #333; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 14px; }
+        .btn-delete { background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-delete:hover { background: #c82333; }
 
-        /* Card System */
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 20px; }
         .card-header { background: #343a40; color: white; padding: 15px 20px; font-size: 18px; font-weight: 600; }
+        .card-header .id-badge { float: right; background: #495057; padding: 5px 10px; border-radius: 4px; font-size: 14px; font-weight: normal; }
         .card-body { padding: 20px; }
-
-        /* Stats Grid */
         .stats-row { display: flex; gap: 20px; margin-bottom: 20px; }
         .stat-box { flex: 1; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e9ecef; text-align: center; }
         .stat-label { display: block; color: #6c757d; font-size: 12px; font-weight: bold; text-transform: uppercase; }
@@ -69,43 +102,51 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
         .status-Paroled { color: #28a745; }
         .status-Isolated { color: #dc3545; }
         .status-Normal { color: #007bff; }
-
-        /* Information Grids */
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        
-        /* Personal Info Table Style */
         .info-table { width: 100%; border-collapse: collapse; }
         .info-table td { padding: 8px 5px; border-bottom: 1px solid #eee; font-size: 14px; }
         .info-label { font-weight: bold; color: #555; width: 140px; }
         .section-subhead { color: #007bff; font-weight: bold; margin-top: 15px; margin-bottom: 5px; display: block; border-bottom: 1px solid #ddd; padding-bottom: 3px;}
-
-        /* Tables & Lists */
         table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 14px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
         th { background-color: #f8f9fa; color: #555; }
         ul { list-style: none; padding: 0; margin: 0; }
         li { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-        
         .meta-text { color: #888; font-size: 12px; display: block; }
         .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; }
         .bg-green { background: #28a745; }
         .bg-orange { background: #ffc107; color: #333; }
-        
         .btn-approve { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
 
+<!-- SUCCESS POPUP LOGIC -->
+<?php if(isset($_SESSION['flash_msg'])): ?>
+    <script>
+        alert("<?php echo $_SESSION['flash_msg']; ?>");
+    </script>
+    <?php unset($_SESSION['flash_msg']); // Clear message ?>
+<?php endif; ?>
+
 <div class="container">
     <div class="top-nav">
         <a href="admin_dashboard.php" class="btn-back">&laquo; Back to Dashboard</a>
+        
+        <!-- NEW ACTION BUTTONS -->
+        <div class="action-group">
+            <a href="edit_prisoner.php?id=<?php echo $pid; ?>" class="btn-edit">✎ Edit Profile</a>
+            <form method="post" style="margin:0;" onsubmit="return confirm('⚠️ WARNING: This will permanently delete the prisoner and all related records (crimes, sentences, etc). Are you sure?');">
+                <button type="submit" name="delete_prisoner" class="btn-delete">🗑 Delete Prisoner</button>
+            </form>
+        </div>
     </div>
 
     <!-- 1. HEADER & KEY STATS -->
     <div class="card">
         <div class="card-header">
             <?php echo $p_data['name']; ?> 
-            <span style="float:right; font-size:14px; background:#555; padding:2px 8px; border-radius:4px;">ID: <?php echo $p_data['prisoner_id']; ?></span>
+            <span class="id-badge">ID: <?php echo $p_data['prisoner_id']; ?></span>
         </div>
         <div class="card-body">
             <div class="stats-row">
@@ -125,7 +166,7 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
         </div>
     </div>
 
-    <!-- 2. PERSONAL & FAMILY INFORMATION (NEW) -->
+    <!-- 2. PERSONAL & FAMILY INFORMATION -->
     <div class="card">
         <div class="card-header">Personal & Family Information</div>
         <div class="card-body">
@@ -199,7 +240,11 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
                 <tr>
                     <td><?php echo $d['duty_name']; ?></td>
                     <td><?php echo $d['hours_assigned']; ?></td>
-                    <td><span class="badge <?php echo ($d['status']=='Pending')?'bg-orange':'bg-green'; ?>"><?php echo $d['status']; ?></span></td>
+                    <td>
+                        <span class="badge <?php echo ($d['status']=='Pending')?'bg-orange':'bg-green'; ?>">
+                            <?php echo $d['status']; ?>
+                        </span>
+                    </td>
                     <td>
                         <?php if($d['status'] == 'Pending'): ?>
                             <form method="post" style="margin:0;">
