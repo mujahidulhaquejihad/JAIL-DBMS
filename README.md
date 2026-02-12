@@ -2,7 +2,22 @@
 
 A web-based **Jail Database Management System** for managing prisoners, duties, parole evaluations, visits, incidents, and announcements. Built with PHP and MySQL, with a responsive UI for desktop and mobile.
 
----
+---<img width="1920" height="1030" alt="13" src="https://github.com/user-attachments/assets/db249983-3b67-43fe-aabd-dd06c4f91a1d" />
+<img width="1920" height="1030" alt="12" src="https://github.com/user-attachments/assets/8f9da7d4-31f2-432a-98c9-54f69639414e" />
+<img width="1920" height="1030" alt="11" src="https://github.com/user-attachments/assets/0f99a0ac-e177-4f77-83f7-2935a7ffd191" />
+<img width="1920" height="1030" alt="10" src="https://github.com/user-attachments/assets/0aeb6740-cf19-4a0e-a2ca-98dc3dd4cdaf" />
+<img width="1920" height="1030" alt="9" src="https://github.com/user-attachments/assets/93bc4290-5b64-4081-bad4-2e8ba9490b03" />
+<img width="1920" height="1030" alt="8" src="https://github.com/user-attachments/assets/cf7f550b-487e-4a97-93ab-c37a13651b19" />
+<img width="1920" height="1030" alt="6" src="https://github.com/user-attachments/assets/aa449616-0717-4abd-89ba-9cb6d5c0992f" />
+<img width="1920" height="1030" alt="5" src="https://github.com/user-attachments/assets/0b68264a-1420-4ff2-b230-2927d387a8de" />
+<img width="1920" height="1030" alt="4" src="https://github.com/user-attachments/assets/7475b7df-e197-48d5-96e1-acc53074864e" />
+<img width="1920" height="1030" alt="3" src="https://github.com/user-attachments/assets/8172c5b7-31f6-4b57-873d-04509ed6506d" />
+<img width="1920" height="1030" alt="2" src="https://github.com/user-attachments/assets/514c5e39-051a-4254-8e42-5fde02836119" />
+<img width="1920" height="1030" alt="1" src="https://github.com/user-attachments/assets/be4a16af-e1c3-4094-9146-9628f501b696" />
+<img width="1920" height="1030" alt="01" src="https://github.com/user-attachments/assets/49d41fa3-4d8b-4724-abff-ca32485490e5" />
+
+
+
 
 ## Features
 
