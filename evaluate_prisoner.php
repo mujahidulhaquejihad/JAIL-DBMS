@@ -97,31 +97,16 @@ if (isset($_POST['confirm_eval'])) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Evaluate Prisoner</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { margin-top: 0; color: #333; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; }
-        .label { font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase; }
-        .value { font-size: 18px; font-weight: bold; color: #333; margin-top: 5px; }
-        
-        .metric-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; align-items: center; }
-        .status-pass { color: green; font-weight: bold; }
-        .status-fail { color: red; font-weight: bold; }
-        
-        .recommendation { background: #e9ecef; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 5px solid #333; }
-        .rec-label { display: block; font-weight: bold; margin-bottom: 5px; }
-        
-        .btn-confirm { background: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 4px; font-size: 16px; cursor: pointer; width: 100%; }
-        .btn-confirm:hover { background: #218838; }
-        .btn-back { display: block; text-align: center; margin-top: 15px; color: #666; text-decoration: none; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluate: <?php echo htmlspecialchars($p_data['name']); ?></title>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
+<?php include 'includes/header.php'; ?>
+<div class="main-wrap">
 
 <!-- SHOW SUCCESS MESSAGE -->
 <?php if(isset($_SESSION['flash_msg'])): ?>
@@ -131,21 +116,23 @@ if (isset($_POST['confirm_eval'])) {
     <?php unset($_SESSION['flash_msg']); ?>
 <?php endif; ?>
 
-<div class="container">
-    <h1>Parole Evaluation: <?php echo $p_data['name']; ?></h1>
+<div class="page-container">
+    <div class="card">
+    <div class="card-header">Parole Evaluation: <?php echo htmlspecialchars($p_data['name']); ?></div>
+    <div class="card-body">
     
-    <div class="grid">
-        <div class="box">
+    <div class="eval-grid">
+        <div class="eval-box">
             <div class="label">Crime Severity</div>
-            <div class="value"><?php echo $severity; ?></div>
+            <div class="value"><?php echo htmlspecialchars($severity); ?></div>
         </div>
-        <div class="box">
+        <div class="eval-box">
             <div class="label">Current Status</div>
-            <div class="value"><?php echo $p_data['current_status']; ?></div>
+            <div class="value"><?php echo htmlspecialchars($p_data['current_status']); ?></div>
         </div>
     </div>
 
-    <h3>Metrics Analysis</h3>
+    <h3 style="margin: 24px 0 12px; font-size: 1rem;">Metrics</h3>
     <div class="metric-row">
         <span><strong>1. Behavior Points</strong> (Req: <?php echo $req_points; ?>)</span>
         <span class="<?php echo ($p_data['total_points'] >= $req_points) ? 'status-pass' : 'status-fail'; ?>">
@@ -178,21 +165,24 @@ if (isset($_POST['confirm_eval'])) {
             </ul>
         </div>
 
-        <label style="font-weight:bold;">Final Decision:</label>
-        <select name="decision" style="width:100%; padding:10px; margin-bottom:10px;">
+        <label>Final decision</label>
+        <select name="decision">
             <option value="Normal" <?php if($decision=='Normal') echo 'selected'; ?>>Normal (Deny Parole)</option>
             <option value="Paroled" <?php if($decision=='Paroled') echo 'selected'; ?>>Parole Granted</option>
-            <option value="Isolated" <?php if($decision=='Isolated') echo 'selected'; ?>>Isolate Prisoner</option>
+            <option value="Isolated" <?php if($decision=='Isolated') echo 'selected'; ?>>Isolate</option>
         </select>
 
-        <label style="font-weight:bold;">Comments / Reason:</label>
-        <textarea name="comments" rows="3" style="width:100%; padding:10px; margin-bottom:20px;"><?php echo implode(", ", $reasons); ?></textarea>
+        <label>Comments / reason</label>
+        <textarea name="comments" rows="3"><?php echo htmlspecialchars(implode(", ", $reasons)); ?></textarea>
 
-        <button type="submit" name="confirm_eval" class="btn-confirm">Confirm Decision</button>
+        <button type="submit" name="confirm_eval" class="btn btn-success btn-block">Confirm decision</button>
     </form>
     
-    <a href="admin_dashboard.php" class="btn-back">Cancel</a>
+    <a href="admin_dashboard.php" class="btn-back">Back to dashboard</a>
+    </div>
+    </div>
 </div>
-
+</div>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

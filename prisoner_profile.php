@@ -73,53 +73,22 @@ $sentences = $conn->query("SELECT * FROM sentence WHERE prisoner_id='$pid'");
 $duties = $conn->query("SELECT da.*, d.duty_name FROM duty_assignment da JOIN duty d ON da.duty_id = d.duty_id WHERE da.prisoner_id='$pid' ORDER BY da.assignment_id DESC");
 $behavior_log = $conn->query("SELECT b.*, a.admin_name FROM behavior_record b LEFT JOIN admin a ON b.admin_id = a.admin_id WHERE b.prisoner_id='$pid' ORDER BY b.record_date DESC");
 $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LEFT JOIN admin a ON pe.admin_id = a.admin_id WHERE pe.prisoner_id='$pid' ORDER BY pe.evaluation_date DESC");
+$incident_log = [];
+$iq = @$conn->query("SELECT * FROM incident_report WHERE prisoner_id='$pid' ORDER BY incident_date DESC");
+if ($iq) while ($row = $iq->fetch_assoc()) $incident_log[] = $row;
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Profile: <?php echo $p_data['name']; ?></title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; padding: 20px; margin: 0; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        .top-nav { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-back { text-decoration: none; color: #555; font-weight: bold; }
-        
-        /* Action Buttons */
-        .action-group { display: flex; gap: 10px; }
-        .btn-edit { background: #ff07f7ff; color: #333; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 14px; }
-        .btn-delete { background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .btn-delete:hover { background: #c82333; }
-
-        .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 20px; }
-        .card-header { background: #343a40; color: white; padding: 15px 20px; font-size: 18px; font-weight: 600; }
-        .card-header .id-badge { float: right; background: #495057; padding: 5px 10px; border-radius: 4px; font-size: 14px; font-weight: normal; }
-        .card-body { padding: 20px; }
-        .stats-row { display: flex; gap: 20px; margin-bottom: 20px; }
-        .stat-box { flex: 1; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e9ecef; text-align: center; }
-        .stat-label { display: block; color: #6c757d; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .stat-value { font-size: 20px; font-weight: bold; color: #333; }
-        .status-Paroled { color: #28a745; }
-        .status-Isolated { color: #dc3545; }
-        .status-Normal { color: #007bff; }
-        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .info-table { width: 100%; border-collapse: collapse; }
-        .info-table td { padding: 8px 5px; border-bottom: 1px solid #eee; font-size: 14px; }
-        .info-label { font-weight: bold; color: #555; width: 140px; }
-        .section-subhead { color: #007bff; font-weight: bold; margin-top: 15px; margin-bottom: 5px; display: block; border-bottom: 1px solid #ddd; padding-bottom: 3px;}
-        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 14px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background-color: #f8f9fa; color: #555; }
-        ul { list-style: none; padding: 0; margin: 0; }
-        li { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-        .meta-text { color: #888; font-size: 12px; display: block; }
-        .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; }
-        .bg-green { background: #28a745; }
-        .bg-orange { background: #ffc107; color: #333; }
-        .btn-approve { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile: <?php echo htmlspecialchars($p_data['name']); ?></title>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
+<?php include 'includes/header.php'; ?>
+<div class="main-wrap">
 
 <!-- SUCCESS POPUP LOGIC -->
 <?php if(isset($_SESSION['flash_msg'])): ?>
@@ -129,15 +98,13 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
     <?php unset($_SESSION['flash_msg']); // Clear message ?>
 <?php endif; ?>
 
-<div class="container">
-    <div class="top-nav">
-        <a href="admin_dashboard.php" class="btn-back">&laquo; Back to Dashboard</a>
-        
-        <!-- NEW ACTION BUTTONS -->
-        <div class="action-group">
-            <a href="edit_prisoner.php?id=<?php echo $pid; ?>" class="btn-edit">✎ Edit Profile</a>
-            <form method="post" style="margin:0;" onsubmit="return confirm('⚠️ WARNING: This will permanently delete the prisoner and all related records (crimes, sentences, etc). Are you sure?');">
-                <button type="submit" name="delete_prisoner" class="btn-delete">🗑 Delete Prisoner</button>
+<div class="app-container">
+    <div class="page-header">
+        <a href="admin_dashboard.php" class="btn btn-ghost">&larr; Dashboard</a>
+        <div class="header-actions">
+            <a href="edit_prisoner.php?id=<?php echo $pid; ?>" class="btn btn-secondary btn-sm">Edit Profile</a>
+            <form method="post" class="inline" onsubmit="return confirm('Permanently delete this prisoner and all related records?');">
+                <button type="submit" name="delete_prisoner" class="btn btn-danger btn-sm">Delete</button>
             </form>
         </div>
     </div>
@@ -205,7 +172,7 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
         <div class="card">
             <div class="card-header">Crimes Committed</div>
             <div class="card-body">
-                <ul>
+                <ul class="unstyled">
                 <?php while($c = $crimes->fetch_assoc()): ?>
                     <li>
                         <strong><?php echo $c['crime_type']; ?></strong>
@@ -218,7 +185,7 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
         <div class="card">
             <div class="card-header">Current Sentence</div>
             <div class="card-body">
-                <ul>
+                <ul class="unstyled">
                 <?php while($s = $sentences->fetch_assoc()): ?>
                     <li>
                         <strong><?php echo $s['duration_in_months']; ?> Months Imprisonment</strong>
@@ -233,38 +200,41 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
     <!-- 4. DUTY & HISTORY -->
     <div class="card">
         <div class="card-header">Duty Assignments</div>
-        <div class="card-body">
-            <table>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-wrap">
+            <table class="data-table">
                 <tr><th>Duty</th><th>Hours</th><th>Status</th><th>Action</th></tr>
                 <?php while($d = $duties->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo $d['duty_name']; ?></td>
                     <td><?php echo $d['hours_assigned']; ?></td>
                     <td>
-                        <span class="badge <?php echo ($d['status']=='Pending')?'bg-orange':'bg-green'; ?>">
+                        <span class="badge <?php echo ($d['status']=='Pending')?'badge-warning':'badge-success'; ?>">
                             <?php echo $d['status']; ?>
                         </span>
                     </td>
                     <td>
                         <?php if($d['status'] == 'Pending'): ?>
-                            <form method="post" style="margin:0;">
+                            <form method="post" class="inline">
                                 <input type="hidden" name="assign_id" value="<?php echo $d['assignment_id']; ?>">
                                 <input type="hidden" name="hours" value="<?php echo $d['hours_assigned']; ?>">
-                                <button type="submit" name="approve_work" class="btn-approve">✔ Approve</button>
+                                <button type="submit" name="approve_work" class="btn btn-success btn-sm">Approve</button>
                             </form>
                         <?php else: echo "<span style='color:#ccc;'>Locked</span>"; endif; ?>
                     </td>
                 </tr>
                 <?php endwhile; ?>
             </table>
+            </div>
         </div>
     </div>
 
     <div class="details-grid">
         <div class="card">
             <div class="card-header">Behavior History</div>
-            <div class="card-body">
-                <table>
+            <div class="card-body" style="padding: 0;">
+                <div class="table-wrap">
+                <table class="data-table">
                     <tr><th>Reason</th><th>Pts</th><th>Admin</th></tr>
                     <?php while($b = $behavior_log->fetch_assoc()): ?>
                         <tr>
@@ -274,12 +244,14 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
                         </tr>
                     <?php endwhile; ?>
                 </table>
+                </div>
             </div>
         </div>
         <div class="card">
             <div class="card-header">Parole Evaluations</div>
-            <div class="card-body">
-                <table>
+            <div class="card-body" style="padding: 0;">
+                <div class="table-wrap">
+                <table class="data-table">
                     <tr><th>Decision</th><th>Date</th><th>Admin</th></tr>
                     <?php while($e = $eval_log->fetch_assoc()): ?>
                         <tr>
@@ -289,10 +261,36 @@ $eval_log = $conn->query("SELECT pe.*, a.admin_name FROM parole_evaluation pe LE
                         </tr>
                     <?php endwhile; ?>
                 </table>
+                </div>
             </div>
         </div>
     </div>
 
+    <?php if (count($incident_log) > 0): ?>
+    <div class="card">
+        <div class="card-header">Incident Reports</div>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr><th>Date</th><th>Type</th><th>Severity</th><th>Action taken</th></tr></thead>
+                <tbody>
+                <?php foreach ($incident_log as $inc): ?>
+                    <tr>
+                        <td><?php echo $inc['incident_date']; ?></td>
+                        <td><?php echo htmlspecialchars($inc['incident_type']); ?></td>
+                        <td><span class="badge badge-<?php echo $inc['severity']=='Critical'||$inc['severity']=='High' ? 'danger' : 'warning'; ?>"><?php echo $inc['severity']; ?></span></td>
+                        <td><?php echo htmlspecialchars($inc['action_taken'] ?? '–'); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
 </div>
+</div>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

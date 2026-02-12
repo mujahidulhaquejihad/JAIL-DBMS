@@ -52,89 +52,78 @@ if (isset($_POST['submit_work'])) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prisoner Portal</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e9ecef; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        
-        /* Card Styles */
-        .profile-card { background: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 20px; }
-        .header { background: #333; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .header h2 { margin: 0; font-size: 20px; }
-        .logout-btn { color: #ffcccc; text-decoration: none; font-size: 14px; }
-        .card-body { padding: 20px; }
-        
-        /* Stats */
-        .stat-box { display: inline-block; width: 48%; margin-bottom: 15px; font-size: 15px; }
-        .stat-label { font-weight: bold; color: #555; display: block; margin-bottom: 3px; }
-        .status-Paroled { color: green; font-weight: bold; }
-        .status-Isolated { color: red; font-weight: bold; }
-        .status-Normal { color: #007bff; font-weight: bold; }
-        
-        /* Personal Info Table */
-        .info-table { width: 100%; font-size: 14px; border-collapse: collapse; }
-        .info-table td { padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
-        .lbl { color: #777; width: 130px; font-weight: 600; }
-        .val { color: #333; }
-        .sub-header { color: #007bff; font-weight: bold; margin-top: 15px; margin-bottom: 5px; display: block; border-bottom: 1px solid #ddd; }
-
-        /* Form */
-        input[type=number], select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; background-color: #007BFF; color: white; padding: 10px; margin: 8px 0; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #0056b3; }
-        .btn-parole { background: #6f42c1; color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; font-size: 14px; display: inline-block; margin-top: 10px;}
-        
-        /* History Table */
-        .hist-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .hist-table th, .hist-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        .hist-table th { background-color: #f8f9fa; color: #333; }
-        .badge-pending { background: #ffc107; color: #333; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-        .badge-approved { background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-    </style>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
+<?php include 'includes/header.php'; ?>
+<div class="main-wrap">
 
 <?php if(isset($_SESSION['flash_msg'])): ?>
     <script> alert("<?php echo $_SESSION['flash_msg']; ?>"); </script>
     <?php unset($_SESSION['flash_msg']); ?>
 <?php endif; ?>
 
-<div class="container">
+<div class="page-container">
 
     <!-- 1. MAIN STATS -->
-    <div class="profile-card">
-        <div class="header">
-            <h2>Welcome, <?php echo htmlspecialchars($p_data['name']); ?></h2>
-            <a href="logout.php" class="logout-btn">Logout</a>
+    <div class="card">
+        <div class="card-header">
+            Welcome, <?php echo htmlspecialchars($p_data['name']); ?>
+            <a href="logout.php" style="color: rgba(255,255,255,0.9); text-decoration: none; font-size: 0.875rem;">Logout</a>
         </div>
         <div class="card-body">
-            <div class="stat-box">
-                <span class="stat-label">Crime Type</span>
-                <?php echo isset($crime_data['crime_type']) ? $crime_data['crime_type'] : 'N/A'; ?>
+            <div class="stats-row">
+                <div class="stat-box">
+                    <span class="stat-label">Crime Type</span>
+                    <span class="stat-value"><?php echo isset($crime_data['crime_type']) ? htmlspecialchars($crime_data['crime_type']) : 'N/A'; ?></span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Sentence</span>
+                    <span class="stat-value"><?php echo isset($sent_data['duration_in_months']) ? $sent_data['duration_in_months'] . " mo" : 'N/A'; ?></span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Points</span>
+                    <span class="stat-value"><?php echo $p_data['total_points']; ?></span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Status</span>
+                    <span class="stat-value status-<?php echo $p_data['current_status']; ?>"><?php echo $p_data['current_status']; ?></span>
+                </div>
             </div>
-            <div class="stat-box">
-                <span class="stat-label">Sentence</span>
-                <?php echo isset($sent_data['duration_in_months']) ? $sent_data['duration_in_months'] . " Months" : 'N/A'; ?>
-            </div>
-            <div class="stat-box">
-                <span class="stat-label">Points</span>
-                <span style="font-size: 1.2em; font-weight: bold; color: #333;"><?php echo $p_data['total_points']; ?></span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-label">Status</span>
-                <span class="status-<?php echo $p_data['current_status']; ?>"><?php echo $p_data['current_status']; ?></span>
-            </div>
-            <div style="clear:both; border-top: 1px solid #eee; padding-top: 15px;">
-                <a href="prisoner_parole.php" class="btn-parole">🔍 Check Parole Status</a>
+            <div style="padding-top: 12px; border-top: 1px solid var(--border);">
+                <a href="prisoner_parole.php" class="btn btn-primary">Check Parole Status</a>
             </div>
         </div>
     </div>
 
-    <!-- 2. PERSONAL INFORMATION (NEW) -->
-    <div class="profile-card">
-        <div class="header"><h2>My Personal File</h2></div>
+    <?php
+    $announcements = [];
+    $aq = @$conn->query("SELECT * FROM announcement WHERE is_active = 1 ORDER BY created_at DESC LIMIT 5");
+    if ($aq) while ($a = $aq->fetch_assoc()) $announcements[] = $a;
+    if (count($announcements) > 0):
+    ?>
+    <div class="card">
+        <div class="card-header">Announcements</div>
+        <div class="card-body">
+            <?php foreach ($announcements as $a): ?>
+                <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+                    <strong><?php echo htmlspecialchars($a['title']); ?></strong>
+                    <span class="meta-text"><?php echo date('M j, Y', strtotime($a['created_at'])); ?></span>
+                    <p style="margin: 6px 0 0;"><?php echo nl2br(htmlspecialchars($a['body'] ?? '')); ?></p>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- 2. PERSONAL INFORMATION -->
+    <div class="card">
+        <div class="card-header">My Personal File</div>
         <div class="card-body">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                 <div>
@@ -162,11 +151,11 @@ if (isset($_POST['submit_work'])) {
     </div>
 
     <!-- 3. REQUEST DUTY -->
-    <div class="profile-card">
-        <div class="header"><h2>Request Duty / Log Work</h2></div>
+    <div class="card">
+        <div class="card-header">Request Duty / Log Work</div>
         <div class="card-body">
             <form method="post">
-                <label>Select Duty Type:</label>
+                <label>Duty type</label>
                 <select name="duty_id" required>
                     <?php
                     $d_res = $conn->query("SELECT * FROM duty");
@@ -175,34 +164,40 @@ if (isset($_POST['submit_work'])) {
                     }
                     ?>
                 </select>
-                <label>Hours Worked:</label>
-                <input type="number" name="hours" placeholder="e.g., 5" required min="1" max="12">
-                <button type="submit" name="submit_work">Submit Request</button>
+                <label>Hours worked</label>
+                <input type="number" name="hours" placeholder="e.g. 5" required min="1" max="12">
+                <button type="submit" name="submit_work" class="btn btn-primary btn-block">Submit Request</button>
             </form>
         </div>
     </div>
 
     <!-- 4. HISTORY -->
-    <div class="profile-card">
-        <div class="header"><h2>My Duty History</h2></div>
-        <div class="card-body">
-            <table class="hist-table">
-                <tr><th>Duty Name</th><th>Hours</th><th>Status</th></tr>
+    <div class="card">
+        <div class="card-header">My Duty History</div>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr><th>Duty</th><th>Hours</th><th>Status</th></tr></thead>
+                <tbody>
                 <?php
                 $hist = $conn->query("SELECT da.*, d.duty_name FROM duty_assignment da JOIN duty d ON da.duty_id = d.duty_id WHERE da.prisoner_id='$pid' ORDER BY da.assignment_id DESC");
                 if ($hist->num_rows > 0) {
                     while($h = $hist->fetch_assoc()){
-                        $badge_class = ($h['status'] == 'Pending') ? 'badge-pending' : 'badge-approved';
+                        $badge_class = ($h['status'] == 'Pending') ? 'badge badge-warning' : 'badge badge-success';
                         echo "<tr><td>{$h['duty_name']}</td><td>{$h['hours_assigned']}</td><td><span class='$badge_class'>{$h['status']}</span></td></tr>";
                     }
                 } else {
-                    echo "<tr><td colspan='3' style='text-align:center; color:#777;'>No duty history found.</td></tr>";
+                    echo "<tr><td colspan='3' style='text-align:center; padding:24px; color: var(--text-muted);'>No duty history.</td></tr>";
                 }
                 ?>
+                </tbody>
             </table>
+            </div>
         </div>
     </div>
 
 </div>
+</div>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

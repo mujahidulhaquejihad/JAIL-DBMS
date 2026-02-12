@@ -35,108 +35,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JDBMS Login</title>
-    <style>
-        /* General Page Reset */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #e9ecef;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh; /* Full viewport height */
-        }
-
-        /* Login Card Container */
-        .login-card {
-            background: white;
-            width: 350px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-
-        /* Header Style */
-        .login-header {
-            background-color: #333;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .login-header h2 { margin: 0; font-size: 22px; font-weight: 500; }
-        .login-header p { margin: 5px 0 0; font-size: 12px; color: #ccc; }
-
-        /* Form Body */
-        .login-body { padding: 30px; }
-
-        /* Input Fields */
-        label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 14px; }
-        
-        input[type=text], input[type=password] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box; /* Ensures padding doesn't break width */
-        }
-
-        /* Login Button */
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover { background-color: #0056b3; }
-
-        /* Error Message Box */
-        .error-box {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 14px;
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-
+<?php $minimal_header = true; include 'includes/header.php'; ?>
+    <div class="main-wrap login-wrap">
     <div class="login-card">
         <div class="login-header">
-            <h2>JDBMS Access</h2>
+            <h1>JDBMS Access</h1>
             <p>Jail Database Management System</p>
         </div>
         
         <div class="login-body">
-            
             <?php if(!empty($error_msg)): ?>
-                <div class="error-box"><?php echo $error_msg; ?></div>
+                <div class="alert alert-error"><?php echo htmlspecialchars($error_msg); ?></div>
             <?php endif; ?>
 
             <form method="post">
-                <label>Username</label>
-                <input type="text" name="username" placeholder="Enter username" required>
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter username" required autocomplete="username">
 
-                <label>Password</label>
-                <input type="password" name="password" placeholder="Enter password" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password">
 
-                <button type="submit">Secure Login</button>
+                <button type="submit" class="btn btn-primary btn-block">Sign in</button>
             </form>
         </div>
     </div>
-
+    </div>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

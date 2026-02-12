@@ -57,65 +57,57 @@ if(isset($_POST['request_review'])) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parole Status</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { margin-top: 0; color: #333; }
-        
-        .status-box { padding: 20px; border-radius: 6px; text-align: center; margin-bottom: 20px; color: white; }
-        .eligible { background: #28a745; }
-        .not-eligible { background: #dc3545; }
-        
-        .metric { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-        .metric-title { font-weight: bold; color: #555; }
-        .metric-val { float: right; font-weight: bold; }
-        .pass { color: green; }
-        .fail { color: red; }
-        
-        .btn-req { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
-        .btn-req:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-back { display: block; text-align: center; margin-top: 15px; color: #666; text-decoration: none; }
-    </style>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-
-<div class="container">
-    <h1>My Parole Status</h1>
+<?php include 'includes/header.php'; ?>
+<div class="main-wrap">
+<div class="page-container">
+    <div class="card">
+    <div class="card-header">My Parole Status</div>
+    <div class="card-body">
     
     <div class="status-box <?php echo $eligible ? 'eligible' : 'not-eligible'; ?>">
-        <h2><?php echo $eligible ? "YOU ARE ELIGIBLE" : "NOT YET ELIGIBLE"; ?></h2>
+        <h2><?php echo $eligible ? "Eligible" : "Not yet eligible"; ?></h2>
         <p><?php echo $eligible ? "You meet the criteria for a parole hearing." : "You must meet all requirements below."; ?></p>
     </div>
 
-    <?php if(!empty($msg)) echo "<p style='color:blue; text-align:center;'>$msg</p>"; ?>
+    <?php if(!empty($msg)): ?>
+        <p class="alert alert-success"><?php echo htmlspecialchars($msg); ?></p>
+    <?php endif; ?>
 
-    <div class="metric">
-        <span class="metric-title">1. Behavior Points (Target: <?php echo $req_points; ?>)</span>
-        <span class="metric-val <?php echo ($p_data['total_points'] >= $req_points) ? 'pass' : 'fail'; ?>">
+    <div class="metric-row">
+        <span><strong>1. Behavior points</strong> (target: <?php echo $req_points; ?>)</span>
+        <span class="<?php echo ($p_data['total_points'] >= $req_points) ? 'status-pass' : 'status-fail'; ?>">
             <?php echo $p_data['total_points']; ?>
         </span>
     </div>
     
-    <div class="metric">
-        <span class="metric-title">2. Time Served (Target: <?php echo $req_time_pct; ?>%)</span>
-        <span class="metric-val <?php echo ($percent_served >= $req_time_pct) ? 'pass' : 'fail'; ?>">
+    <div class="metric-row">
+        <span><strong>2. Time served</strong> (target: <?php echo $req_time_pct; ?>%)</span>
+        <span class="<?php echo ($percent_served >= $req_time_pct) ? 'status-pass' : 'status-fail'; ?>">
             <?php echo round($percent_served, 1); ?>%
         </span>
     </div>
 
-    <form method="post">
+    <form method="post" style="margin-top: 24px;">
         <?php if($eligible): ?>
-            <button type="submit" name="request_review" class="btn-req">Request Parole Review</button>
+            <button type="submit" name="request_review" class="btn btn-primary btn-block">Request parole review</button>
         <?php else: ?>
-             <button type="button" disabled class="btn-req" style="background:#ccc; cursor:not-allowed;">Requirements Not Met</button>
+            <button type="button" disabled class="btn btn-ghost btn-block">Requirements not met</button>
         <?php endif; ?>
     </form>
     
-    <a href="prisoner_dashboard.php" class="btn-back">Back to Dashboard</a>
+    <a href="prisoner_dashboard.php" class="btn-back">Back to dashboard</a>
+    </div>
+    </div>
 </div>
-
+</div>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

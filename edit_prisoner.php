@@ -89,31 +89,20 @@ if (isset($_POST['update_prisoner'])) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Edit Prisoner: <?php echo $p_data['name']; ?></title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; margin-bottom: 20px; }
-        label { font-weight: bold; color: #555; display: block; margin-top: 10px; font-size: 14px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        input[type=text], input[type=password], input[type=date], input[type=number], select, textarea {
-            width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-        }
-        .section-title { 
-            grid-column: span 2; margin-top: 20px; border-bottom: 2px solid #eee; 
-            padding-bottom: 5px; color: #007bff; font-weight: bold; font-size: 16px;
-        }
-        .btn-submit { grid-column: span 2; width: 100%; background: #007bff; color: white; padding: 12px; border: none; margin-top: 20px; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        .btn-submit:hover { background: #0056b3; }
-        .btn-back { display: block; text-align: center; margin-top: 15px; color: #555; text-decoration: none; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit: <?php echo htmlspecialchars($p_data['name']); ?></title>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-
-    <div class="container">
-        <h2>Edit Prisoner: <?php echo $p_data['name']; ?></h2>
+<?php include 'includes/header.php'; ?>
+<div class="main-wrap">
+    <div class="page-container">
+        <div class="card">
+        <div class="card-header">Edit: <?php echo htmlspecialchars($p_data['name']); ?></div>
+        <div class="card-body">
         
         <form method="post" class="form-grid">
             
@@ -183,11 +172,14 @@ if (isset($_POST['update_prisoner'])) {
                 </select>
             </div>
             
-            <button type="submit" name="update_prisoner" class="btn-submit">Update Prisoner Record</button>
+            <button type="submit" name="update_prisoner" class="btn btn-primary btn-block" style="grid-column: 1 / -1; margin-top: 8px;">Update Record</button>
         </form>
 
-        <a href="prisoner_profile.php?id=<?php echo $pid; ?>" class="btn-back">Cancel & Back to Profile</a>
+        <a href="prisoner_profile.php?id=<?php echo $pid; ?>" class="btn-back">Cancel & back to profile</a>
+        </div>
+        </div>
     </div>
-
+</div>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>
